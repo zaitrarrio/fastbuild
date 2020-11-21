@@ -50,20 +50,20 @@ FileNode::~FileNode() = default;
     return NODE_RESULT_OK;
 }
 
-// HandleWarningsMSVC
+// HandleWarnings
 //------------------------------------------------------------------------------
-void FileNode::HandleWarningsMSVC( Job * job, const AString & name, const AString & data )
+void FileNode::HandleWarnings( Job * job, const AString & name, const AString & data, const char * warningString )
 {
     if ( data.IsEmpty() )
     {
         return;
     }
 
-    // Are there any warnings? (string is ok even in non-English)
-    if ( data.Find( ": warning " ) )
+    // Are there any warnings?
+    if ( strstr( data, warningString ) )
     {
         const bool treatAsWarnings = true;
-        DumpOutput( job, data, name, treatAsWarnings );
+        DumpOutput( job, name, data, treatAsWarnings );
     }
 }
 
@@ -80,13 +80,21 @@ void FileNode::HandleWarningsClangGCC( Job * job, const AString & name, const AS
     if ( data.Find( "warning: " ) )
     {
         const bool treatAsWarnings = true;
-        DumpOutput( job, data, name, treatAsWarnings );
+        DumpOutput( job, name, data, treatAsWarnings );
     }
+}
+
+// HandleWarningsMSVC
+//------------------------------------------------------------------------------
+void FileNode::HandleWarningsMSVC( Job * job, const AString & name, const AString & data )
+{
+    constexpr const char * msvcWarningString = ": warning ";  // string is ok even in non-English
+    return HandleWarnings( job, name, data, msvcWarningString);
 }
 
 // DumpOutput
 //------------------------------------------------------------------------------
-void FileNode::DumpOutput( Job * job, const AString & buffer, const AString & name, bool treatAsWarnings )
+void FileNode::DumpOutput( Job * job,  const AString & name, const AString & data, bool treatAsWarnings )
 {
     if ( buffer.IsEmpty() == false )
     {
@@ -97,9 +105,9 @@ void FileNode::DumpOutput( Job * job, const AString & buffer, const AString & na
         AStackString<> msg;
         msg.Format( "%s: %s\n", treatAsWarnings ? "WARNING" : "PROBLEM", name.Get() );
 
-        AString finalBuffer( buffer.GetLength() + msg.GetLength() );
+        AString finalBuffer( data.GetLength() + msg.GetLength() );
         finalBuffer += msg;
-        finalBuffer += buffer;
+        finalBuffer += data;
 
         Node::DumpOutput( job, finalBuffer, &exclusions );
     }
