@@ -314,13 +314,7 @@ bool Process::Spawn( const char * executable,
             // Build Vector
             for ( AString & arg : splitArgs )
             {
-                if ( arg.BeginsWith( '"' ) && arg.EndsWith( '"' ) )
-                {
-                    // strip quotes
-                    arg.SetLength( arg.GetLength() - 1 ); // trim end quote
-                    argVector.Append( arg.Get() + 1 ); // skip start quote
-                    continue;
-                }
+                Unquote( arg );
                 argVector.Append( arg.Get() ); // leave arg as-is
             }
         }
@@ -780,3 +774,41 @@ void Process::Terminate()
 }
 
 //------------------------------------------------------------------------------
+
+
+// Unquote
+//------------------------------------------------------------------------------
+/*static*/ void Process::Unquote( AString & string )
+{
+    const char * src = string.Get();
+    const char * end = string.GetEnd();
+    char * dst = string.Get();
+
+    char quoteChar = 0;
+    for ( ; src < end; ++src )
+    {
+        const char c = *src;
+        if ( ( c == '"' ) || ( c == '\'' ) )
+        {
+            if ( quoteChar == 0 )
+            {
+                // opening quote, ignore it
+                quoteChar = c;
+                continue;
+            }
+            else if ( quoteChar == c )
+            {
+                // closing quote, ignore it
+                quoteChar = 0;
+                continue;
+            }
+            else
+            {
+                // quote of the 'other' type - consider as part of token
+            }
+        }
+        *dst++ = c;
+    }
+
+    string.SetLength( (uint32_t)( dst - string.Get() ) );
+}

@@ -41,7 +41,8 @@ public:
     #endif
     bool HasAborted() const { return m_HasAborted; }
     static uint32_t GetCurrentId();
-
+    static void Unquote( AString & string );
+    
 private:
     #if defined( __WINDOWS__ )
         void KillProcessTreeInternal( const void * hProc, // HANDLE
